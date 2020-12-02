@@ -10,6 +10,7 @@ from helpers import dataloader, get_fname, get_params
 
 
 def train(train_iter, model, optimizer, epochs, max_clip, valid_iter=None):
+    # print("attempting to train?")
     total_loss = 0
     valid_data = list(valid_iter)
     valid_loss = None
@@ -17,6 +18,7 @@ def train(train_iter, model, optimizer, epochs, max_clip, valid_iter=None):
     pad = model.vocab.stoi['<pad>']
 
     for _, batch in enumerate(train_iter, start=1):
+        # print("attempting to looop?")
         story = batch.story
         query = batch.query
         answer = batch.answer
