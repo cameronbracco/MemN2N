@@ -10,15 +10,17 @@ from helpers import dataloader, get_fname, get_params
 
 
 def train(train_iter, model, optimizer, epochs, max_clip, valid_iter=None):
-    # print("attempting to train?")
+    print("attempting to train?", epochs)
     total_loss = 0
     valid_data = list(valid_iter)
     valid_loss = None
     next_epoch_to_report = 5
     pad = model.vocab.stoi['<pad>']
 
+    count = 0
     for _, batch in enumerate(train_iter, start=1):
-        # print("attempting to looop?")
+        print("attempting to looop?", count)
+        count += 1
         story = batch.story
         query = batch.query
         answer = batch.answer
@@ -51,8 +53,10 @@ def train(train_iter, model, optimizer, epochs, max_clip, valid_iter=None):
                 int(train_iter.epoch), total_loss / len(train_iter)))
             next_epoch_to_report += 5
         if int(train_iter.epoch) == train_iter.epoch:
+            print("Finished an epoch?", train_iter.epoch)
             total_loss = 0
         if train_iter.epoch == epochs:
+            print("Looks like we're outside of epochs")
             break
 
 
@@ -92,6 +96,7 @@ def run(config):
         train(train_iter, model, optimizer, config.num_epochs, config.max_clip, valid_iter)
         if not os.path.isdir(config.save_dir):
             os.makedirs(config.save_dir)
+        print("Finished training")
         torch.save(model.state_dict(), os.path.join(config.save_dir, get_fname(config)))
 
     print("#! testing...")
