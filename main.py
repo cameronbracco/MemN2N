@@ -17,45 +17,49 @@ def train(train_iter, model, optimizer, epochs, max_clip, valid_iter=None):
     next_epoch_to_report = 5
     pad = model.vocab.stoi['<pad>']
 
-    count = 0
-    for _, batch in enumerate(train_iter, start=1):
-        print("attempting to looop?", count)
-        count += 1
-        story = batch.story
-        query = batch.query
-        answer = batch.answer
+    print("Do I see this?", train_iter.repeat)
 
-        optimizer.zero_grad()
-        outputs = model(story, query)
-        loss = F.nll_loss(outputs, answer.view(-1), ignore_index=pad, reduction='sum')
-        loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), max_clip)
-        optimizer.step()
-        total_loss += loss.item()
+    epoch_count = 0
+    while True:
+        print("In the num_epoch loop", epoch_count) # TODO Could make this a finite loop instead of infinite lol
+        for _, batch in enumerate(train_iter, start=1):
+            # print("attempting to looop in the innnner", epoch_count)
+            story = batch.story
+            query = batch.query
+            answer = batch.answer
 
-        # linear start
-        if model.use_ls:
-            loss = 0
-            for k, batch in enumerate(valid_data, start=1):
-                story = batch.story
-                query = batch.query
-                answer = batch.answer
-                outputs = model(story, query)
-                loss += F.nll_loss(outputs, answer.view(-1), ignore_index=pad, reduction='sum').item()
-            loss = loss / k
-            if valid_loss and valid_loss <= loss:
-                model.use_ls = False
-            else:
-                valid_loss = loss
+            optimizer.zero_grad()
+            outputs = model(story, query)
+            loss = F.nll_loss(outputs, answer.view(-1), ignore_index=pad, reduction='sum')
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), max_clip)
+            optimizer.step()
+            total_loss += loss.item()
 
-        if train_iter.epoch == next_epoch_to_report:
+            # linear start
+            if model.use_ls:
+                loss = 0
+                for k, batch in enumerate(valid_data, start=1):
+                    story = batch.story
+                    query = batch.query
+                    answer = batch.answer
+                    outputs = model(story, query)
+                    loss += F.nll_loss(outputs, answer.view(-1), ignore_index=pad, reduction='sum').item()
+                loss = loss / k
+                if valid_loss and valid_loss <= loss:
+                    model.use_ls = False
+                else:
+                    valid_loss = loss
+
+        if epoch_count == next_epoch_to_report:
             print("#! epoch {:d} average batch loss: {:5.4f}".format(
-                int(train_iter.epoch), total_loss / len(train_iter)))
+                int(epoch_count), total_loss / len(train_iter)))
             next_epoch_to_report += 5
         if int(train_iter.epoch) == train_iter.epoch:
             print("Finished an epoch?", train_iter.epoch)
+            epoch_count += 1
             total_loss = 0
-        if train_iter.epoch == epochs:
+        if epoch_count == epochs:
             print("Looks like we're outside of epochs")
             break
 
@@ -70,6 +74,9 @@ def eval(test_iter, model):
         outputs = model(story, query)
         _, outputs = torch.max(outputs, -1)
         total_error += torch.mean((outputs != answer.view(-1)).float()).item()
+
+        if test_iter.epoch >= 1:
+            break
     print("#! average error: {:5.1f}".format(total_error / k * 100))
 
 
